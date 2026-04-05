@@ -60,4 +60,19 @@ No gherkin here.
   it('returns null for empty content', () => {
     expect(extractGherkin('')).toBeNull();
   });
+
+  it('does not extract gherkin after a heading following Acceptance Criteria', () => {
+    const content = `
+## Acceptance Criteria
+
+No gherkin here.
+
+## Notes
+
+\`\`\`gherkin
+Feature: Should not be extracted
+\`\`\`
+`;
+    expect(extractGherkin(content)).toBeNull();
+  });
 });

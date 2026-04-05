@@ -80,7 +80,11 @@ export function extractGherkin(content: string): string | null {
       const text = heading.children
         ?.map((c: Node & { value?: string }) => c.value ?? '')
         .join('') ?? '';
-      inAcceptanceCriteria = heading.depth === 2 && text === 'Acceptance Criteria';
+      if (text === 'Acceptance Criteria' && heading.depth === 2) {
+        inAcceptanceCriteria = true;
+      } else {
+        inAcceptanceCriteria = false;
+      }
     }
     if (
       inAcceptanceCriteria &&
