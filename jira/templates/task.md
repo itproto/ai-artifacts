@@ -3,7 +3,7 @@ id: TASK-XXX
 title: 
 type: task
 status: backlog
-layer: frontend | backend | fullstack
+layer: frontend  # frontend | backend | fullstack
 assignee: 
 blockedBy: []
 ---

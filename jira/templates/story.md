@@ -4,7 +4,7 @@ title:
 type: story
 status: backlog
 epic: EPIC-XXX
-layer: frontend | backend | fullstack
+layer: frontend  # frontend | backend | fullstack
 assignee: 
 points: 
 blockedBy: []
