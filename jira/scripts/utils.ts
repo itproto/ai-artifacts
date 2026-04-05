@@ -41,12 +41,11 @@ export function deriveSprintFromPath(filePath: string): string | null {
 export function parseStoryFile(filePath: string): Story {
   const raw = fs.readFileSync(filePath, 'utf-8');
   const { data, content } = matter(raw);
-  return {
-    frontmatter: data as StoryFrontmatter,
-    content,
-    filePath,
-    sprint: deriveSprintFromPath(filePath),
-  };
+  const fm = data as StoryFrontmatter;
+  if (!fm.id || !fm.status || !fm.layer || !fm.type) {
+    throw new Error(`${filePath}: missing required frontmatter fields (id, status, layer, type)`);
+  }
+  return { frontmatter: fm, content, filePath, sprint: deriveSprintFromPath(filePath) };
 }
 
 export function collectMdFiles(dir: string): string[] {
@@ -80,11 +79,8 @@ export function extractGherkin(content: string): string | null {
       const text = heading.children
         ?.map((c: Node & { value?: string }) => c.value ?? '')
         .join('') ?? '';
-      if (text === 'Acceptance Criteria' && heading.depth === 2) {
-        inAcceptanceCriteria = true;
-      } else {
-        inAcceptanceCriteria = false;
-      }
+      inAcceptanceCriteria = heading.depth === 2 && text === 'Acceptance Criteria';
+      return 'skip';
     }
     if (
       inAcceptanceCriteria &&
