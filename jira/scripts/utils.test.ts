@@ -61,6 +61,25 @@ No gherkin here.
     expect(extractGherkin('')).toBeNull();
   });
 
+  it('extracts gherkin block after an H3 sub-heading inside Acceptance Criteria', () => {
+    const content = `
+## Acceptance Criteria
+
+### Happy path
+
+\`\`\`gherkin
+Feature: Sub-heading gherkin
+
+  Scenario: still extracted
+    Given I am inside an H3
+    Then gherkin is still found
+\`\`\`
+`;
+    const result = extractGherkin(content);
+    expect(result).toContain('Feature: Sub-heading gherkin');
+    expect(result).toContain('still extracted');
+  });
+
   it('does not extract gherkin after a heading following Acceptance Criteria', () => {
     const content = `
 ## Acceptance Criteria
