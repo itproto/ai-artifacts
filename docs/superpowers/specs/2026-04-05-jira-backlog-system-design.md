@@ -54,9 +54,13 @@ project-root/
 | Directory | Meaning |
 |-----------|---------|
 | `backlog/` | Story exists, not yet in a sprint |
-| `sprints/sprint-NN/` | Story is in sprint NN (directory = sprint membership) |
+| `sprints/sprint-NN/` | Story is in sprint NN — **directory is the single source of truth** |
 | `done/` | Story is complete and archived |
 | `features/` | Generated — never edit; owned by `extract-features.ts` |
+
+The `sprint` frontmatter field is **dropped**. `board.ts` derives sprint from
+the file path (`file.folder` in Obsidian Dataview). This eliminates the
+directory/field drift problem entirely.
 
 ---
 
@@ -66,6 +70,11 @@ project-root/
 
 Manually maintained. AI agents read this first. Updated at the start of each
 work session.
+
+**Conflict mitigation:** designate one sprint owner (usually whoever moves
+stories into the sprint) who merges all SPRINT.md updates. Each dev updates
+only their own lines under `## In Progress`. Edits to the same section by two
+devs simultaneously should be resolved by the sprint owner before merging.
 
 ```markdown
 # Sprint 01 — 2026-04-06 / 2026-04-20
@@ -90,7 +99,9 @@ Deliver a working Todo app: view and create todos, with user auth.
 
 ### 3.2 EPICS.md
 
-Flat file. No per-epic `.md` files.
+Flat file. No per-epic `.md` files. Changes are infrequent (new epic per
+sprint at most) — low conflict risk. One dev appends a row; conflicts are
+trivially resolved.
 
 ```markdown
 # Epics
@@ -103,7 +114,8 @@ Flat file. No per-epic `.md` files.
 
 ### 3.3 DECISIONS.md
 
-One-liner ADRs. Append-only.
+One-liner ADRs. Strictly append-only — always add at the bottom. Conflicts
+only occur if two devs append simultaneously; resolved by accepting both lines.
 
 ```markdown
 # Decisions
@@ -116,22 +128,26 @@ One-liner ADRs. Append-only.
 
 **Frontmatter fields:**
 
-| Field | Values | Notes |
-|-------|--------|-------|
-| `id` | STORY-NNN | Unique, sequential |
-| `title` | string | Short imperative |
-| `type` | story \| task | |
-| `status` | backlog \| ready \| in-progress \| review \| done | |
-| `epic` | EPIC-NNN | Tag only, no linked file |
-| `layer` | frontend \| backend \| fullstack | |
-| `assignee` | name string | |
-| `points` | number | Optional, informal |
-| `sprint` | sprint-NN | Redundant with directory; kept for Dataview queries |
-| `blockedBy` | [STORY-NNN, ...] | Remove when block clears |
+| Field | Required | Applies to | Values | Notes |
+|-------|----------|------------|--------|-------|
+| `id` | yes | story, task | STORY-NNN / TASK-NNN | Unique, sequential |
+| `title` | yes | story, task | string | Short imperative |
+| `type` | yes | story, task | story \| task | |
+| `status` | yes | story, task | backlog \| ready \| in-progress \| review \| done | |
+| `epic` | yes (story) / no (task) | story | EPIC-NNN | Tag only, no linked file |
+| `layer` | yes | story, task | frontend \| backend \| fullstack | |
+| `assignee` | no | story, task | name string | |
+| `points` | no | story | number | Informal, not used for velocity |
+| `blockedBy` | no | story, task | [STORY-NNN \| TASK-NNN, ...] | Remove when block clears |
+
+`sprint` field is omitted — derived from directory path by tooling.
 
 **`ready` status gate:** a story may only move to `ready` when the
-Acceptance Criteria section contains at least one Gherkin scenario. The board
-script warns on violations.
+Acceptance Criteria section contains at least one Gherkin scenario.
+
+Gate enforcement:
+- `board.ts --validate` exits with code 1 on violations — run manually or in CI
+- PR checklist includes the check as the primary backstop
 
 **Body structure:**
 
@@ -145,7 +161,6 @@ epic: EPIC-001
 layer: frontend
 assignee: alice
 points: 2
-sprint: sprint-01
 ---
 
 ## User Story
@@ -156,18 +171,19 @@ so that I know what I need to do.
 Renders from static mock data. No API calls — backend integration is STORY-002.
 
 ## Acceptance Criteria
-​```gherkin
-Feature: View todos list
 
-  Scenario: User sees todos on the main page
-    Given I open the app
-    Then I should see a list of todo items
-    And each item shows its title and a completion checkbox
+    Feature: View todos list
 
-  Scenario: Empty state
-    Given there are no todos
-    Then I should see "No todos yet" message
-​```
+      Scenario: User sees todos on the main page
+        Given I open the app
+        Then I should see a list of todo items
+        And each item shows its title and a completion checkbox
+
+      Scenario: Empty state
+        Given there are no todos
+        Then I should see "No todos yet" message
+
+(Gherkin block uses triple-backtick gherkin fence in actual files)
 
 ## Tasks
 - [ ] [FE] Create TodoList component
@@ -218,27 +234,30 @@ All scripts live in `jira/scripts/`. Run with `npx ts-node jira/scripts/<name>.t
 
 ### 5.1 `board.ts`
 
-Reads all `.md` files in `backlog/`, `sprints/`, and `done/`. Parses YAML
-frontmatter. Generates `jira/BOARD.md` with:
+Reads all `.md` files in `backlog/`, `sprints/`, and `done/`. Derives sprint
+from directory path (not frontmatter). Generates `jira/BOARD.md` with:
 
 - Kanban columns: backlog | ready | in-progress | review | done
 - Stories grouped by column, showing id, title, assignee, points
-- Warning list: stories with `status: ready` or `in-progress` that have no
-  Gherkin scenarios
+- Warning list: stories `in-progress` with no Gherkin
+
+`--validate` flag: exits with code 1 if any `ready` or `in-progress` story
+has no Gherkin. Used by the pre-commit hook.
 
 ### 5.2 `extract-features.ts`
 
-Reads all story `.md` files. Extracts fenced ` ```gherkin ` blocks from
+Reads all story `.md` files. Uses `remark` (unified.js) to parse the markdown
+AST and extract `code` nodes with `lang: gherkin` inside
 `## Acceptance Criteria` sections. Writes one `.feature` file per story to
 `jira/features/STORY-NNN.feature`. Skips stories with no Gherkin.
 
-Output files are committed to git. Any BDD runner (Playwright + Cucumber,
-Vitest + Cucumber) consumes them from `jira/features/`.
+`jira/features/` is **gitignored** — generated on demand, not committed.
+Regenerate before running BDD tests: `npm run features`.
 
 ### 5.3 `utils.ts`
 
-Shared helpers: frontmatter parser, file walker, Gherkin extractor regex.
-Uses `gray-matter` for frontmatter parsing.
+Shared helpers: frontmatter parser (`gray-matter`), file walker, sprint
+derivation from file path, remark pipeline setup.
 
 ### Dependencies
 
@@ -251,18 +270,28 @@ project's `package.json`:
   "private": true,
   "scripts": {
     "board": "ts-node scripts/board.ts",
+    "validate": "ts-node scripts/board.ts --validate",
     "features": "ts-node scripts/extract-features.ts"
   },
   "devDependencies": {
     "gray-matter": "^4.0.3",
+    "remark": "^15.x",
+    "remark-parse": "^11.x",
+    "unified": "^11.x",
     "typescript": "^5.x",
     "ts-node": "^10.x",
-    "@types/node": "^20.x"
+    "@types/node": "^20.x",
   }
 }
 ```
 
-Run from `jira/`: `npm run board` or `npm run features`.
+Run from `jira/`: `npm run board`, `npm run features`, `npm run validate`.
+
+`jira/.gitignore` must include:
+```
+features/
+node_modules/
+```
 
 ---
 
@@ -274,7 +303,7 @@ All three files share the same core instructions, formatted for each tool.
 
 1. Always read `jira/SPRINT.md` first for current sprint context
 2. Story files live in `jira/sprints/<sprint>/` (active) or `jira/backlog/`
-3. `jira/features/` is generated — never edit directly
+3. `jira/features/` is generated and gitignored — run `npm run features` before executing BDD tests, never edit directly
 4. Commit format: `feat(STORY-001): description` (Conventional Commits)
 5. Gherkin in `## Acceptance Criteria` is the source of truth for behaviour
 6. Move stories to `jira/done/` when complete, update `SPRINT.md`
@@ -314,7 +343,9 @@ Closes STORY-
 -
 
 ## Checklist
-- [ ] Acceptance criteria scenarios pass
+- [ ] Story has Gherkin scenarios in Acceptance Criteria
+- [ ] `npm run validate` passes (no in-progress stories without Gherkin)
+- [ ] `npm run features` run to regenerate .feature files
 - [ ] SPRINT.md updated if story is now done
 - [ ] Story moved to jira/done/ if complete
 ```
