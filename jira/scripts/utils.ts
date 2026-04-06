@@ -47,7 +47,7 @@ export function parseStoryFile(filePath: string): Story {
     throw new Error(`${filePath}: missing required frontmatter fields (id, status, layer, type)`);
   }
   if (fm.status === 'closed' && !fm.reason?.trim()) {
-    throw new Error(`${filePath}: closed stories must have a non-empty 'reason' field`);
+    throw new Error(`${filePath}: closed items must have a non-empty 'reason' field`);
   }
   return { frontmatter: fm, content, filePath, sprint: deriveSprintFromPath(filePath) };
 }

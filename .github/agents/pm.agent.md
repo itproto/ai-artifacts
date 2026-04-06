@@ -85,8 +85,8 @@ Then read and display it.
 
 1. **Find the next available ID** — run separately for stories and tasks:
    ```bash
-   grep -rh "^id:" jira/backlog/ jira/sprints/ jira/done/ 2>/dev/null | grep "STORY-" | sort -t- -k2 -n | tail -3
-   grep -rh "^id:" jira/backlog/ jira/sprints/ jira/done/ 2>/dev/null | grep "TASK-"  | sort -t- -k2 -n | tail -3
+   grep -rh "^id:" jira/backlog/ jira/sprints/ jira/done/ jira/closed/ 2>/dev/null | grep "STORY-" | sort -t- -k2 -n | tail -3
+   grep -rh "^id:" jira/backlog/ jira/sprints/ jira/done/ jira/closed/ 2>/dev/null | grep "TASK-"  | sort -t- -k2 -n | tail -3
    ```
    Increment the highest number by 1.
 
