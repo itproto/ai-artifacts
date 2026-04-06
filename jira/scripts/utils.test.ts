@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import path from 'path';
-import { deriveSprintFromPath, extractGherkin } from './utils.js';
+import fs from 'fs';
+import os from 'os';
+import { deriveSprintFromPath, extractGherkin, parseStoryFile } from './utils.js';
 
 describe('deriveSprintFromPath', () => {
   it('extracts sprint name from sprints directory', () => {
@@ -93,5 +95,58 @@ Feature: Should not be extracted
 \`\`\`
 `;
     expect(extractGherkin(content)).toBeNull();
+  });
+});
+
+describe('parseStoryFile', () => {
+  function writeTempStory(frontmatter: string): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'jira-test-'));
+    const filePath = path.join(dir, 'STORY-001-test.md');
+    fs.writeFileSync(filePath, `---\n${frontmatter}\n---\n\n## Content\n`);
+    return filePath;
+  }
+
+  it('parses a valid closed story with a reason', () => {
+    const filePath = writeTempStory(
+      'id: STORY-001\ntitle: Test\ntype: story\nstatus: closed\nlayer: frontend\nreason: cancelled'
+    );
+    const story = parseStoryFile(filePath);
+    expect(story.frontmatter.status).toBe('closed');
+    expect(story.frontmatter.reason).toBe('cancelled');
+  });
+
+  it('throws for a closed story missing the reason field', () => {
+    const filePath = writeTempStory(
+      'id: STORY-002\ntitle: Test\ntype: story\nstatus: closed\nlayer: frontend'
+    );
+    expect(() => parseStoryFile(filePath)).toThrow("non-empty 'reason' field");
+  });
+
+  it('throws for a closed story with a blank reason', () => {
+    const filePath = writeTempStory(
+      'id: STORY-003\ntitle: Test\ntype: story\nstatus: closed\nlayer: frontend\nreason: "   "'
+    );
+    expect(() => parseStoryFile(filePath)).toThrow("non-empty 'reason' field");
+  });
+
+  it('throws for a closed task missing the reason field', () => {
+    const filePath = writeTempStory(
+      'id: TASK-001\ntitle: Test\ntype: task\nstatus: closed\nlayer: backend'
+    );
+    expect(() => parseStoryFile(filePath)).toThrow("non-empty 'reason' field");
+  });
+
+  it('parses a non-closed story without a reason', () => {
+    const filePath = writeTempStory(
+      'id: STORY-004\ntitle: Test\ntype: story\nstatus: backlog\nlayer: backend'
+    );
+    const story = parseStoryFile(filePath);
+    expect(story.frontmatter.status).toBe('backlog');
+    expect(story.frontmatter.reason).toBeUndefined();
+  });
+
+  it('throws when required frontmatter fields are missing', () => {
+    const filePath = writeTempStory('id: STORY-005\ntitle: Test');
+    expect(() => parseStoryFile(filePath)).toThrow('missing required frontmatter fields');
   });
 });

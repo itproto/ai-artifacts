@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import type { Node, Parent } from 'unist';
 
-export type StoryStatus = 'backlog' | 'ready' | 'in-progress' | 'review' | 'done';
+export type StoryStatus = 'backlog' | 'ready' | 'in-progress' | 'review' | 'done' | 'closed';
 export type StoryLayer = 'frontend' | 'backend' | 'fullstack';
 export type StoryType = 'story' | 'task';
 
@@ -20,6 +20,7 @@ export interface StoryFrontmatter {
   assignee?: string;
   points?: number;
   blockedBy?: string[];
+  reason?: string;  // for closed: cancelled, deferred, duplicate, etc.
 }
 
 export interface Story {
@@ -45,6 +46,9 @@ export function parseStoryFile(filePath: string): Story {
   if (!fm.id || !fm.status || !fm.layer || !fm.type) {
     throw new Error(`${filePath}: missing required frontmatter fields (id, status, layer, type)`);
   }
+  if (fm.status === 'closed' && !fm.reason?.trim()) {
+    throw new Error(`${filePath}: closed items must have a non-empty 'reason' field`);
+  }
   return { frontmatter: fm, content, filePath, sprint: deriveSprintFromPath(filePath) };
 }
 
@@ -63,7 +67,7 @@ export function collectMdFiles(dir: string): string[] {
 }
 
 export function walkStories(jiraDir: string): Story[] {
-  return ['backlog', 'sprints', 'done']
+  return ['backlog', 'sprints', 'done', 'closed']
     .flatMap(dir => collectMdFiles(path.join(jiraDir, dir)))
     .map(parseStoryFile);
 }

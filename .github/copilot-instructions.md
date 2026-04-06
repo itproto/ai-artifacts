@@ -14,6 +14,7 @@ This project tracks work in `jira/`. Always orient yourself before suggesting co
 - Do not suggest implementing a story that has no Gherkin scenarios
 - `jira/features/` is auto-generated — never suggest edits to those files
 - When a story is complete: move the file to `jira/done/`, update `jira/SPRINT.md`
+- When a story is cancelled/deferred: move to `jira/closed/`, set `status: closed`, add `reason:` field
 
 ### Commit messages
 Follow Conventional Commits with story ID as scope:
