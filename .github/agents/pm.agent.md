@@ -18,6 +18,7 @@ jira/
 ├── sprints/
 │   └── sprint-NN/     — story files physically IN this sprint (directory = sprint membership)
 ├── done/              — completed and archived stories
+├── closed/            — closed stories excluded from active workflow
 ├── features/          — generated .feature files; regenerate with: cd jira && npm run features
 └── templates/
     ├── story.md
@@ -35,12 +36,13 @@ jira/
 id: STORY-NNN          # required; unique sequential
 title: Short imperative title
 type: story            # story | task
-status: backlog        # backlog | ready | in-progress | review | done
+status: backlog        # backlog | ready | in-progress | review | done | closed
 epic: EPIC-NNN         # required for stories; omit for tasks
 layer: frontend        # frontend | backend | fullstack
 assignee: name         # optional
 points: N              # optional; informal estimate
 blockedBy: [STORY-NNN, TASK-NNN]  # optional; remove when unblocked
+reason: short-note     # required when status is closed; describes why (cancelled, deferred, duplicate, etc.)
 ---
 ```
 
@@ -122,9 +124,12 @@ Then read and display it.
 ### Change story status
 
 1. Edit the `status:` field in the story's frontmatter
-2. Status lifecycle: `backlog → ready → in-progress → review → done`
-3. **`ready` gate**: only set `status: ready` if `## Acceptance Criteria` contains a `gherkin` fenced code block
-4. Run `cd jira && npm run board`
+2. Active lifecycle: `backlog → ready → in-progress → review`
+3. Terminal states:
+   - Use `status: done` when work is completed and move the file to `jira/done/`
+   - Use `status: closed` when the story is cancelled, rejected, superseded, or otherwise ended without delivery; populate `reason:` and move the file to `jira/closed/`
+4. **`ready` gate**: only set `status: ready` if `## Acceptance Criteria` contains a `gherkin` fenced code block
+5. Run `cd jira && npm run board`
 
 ---
 

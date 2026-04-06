@@ -46,6 +46,9 @@ export function parseStoryFile(filePath: string): Story {
   if (!fm.id || !fm.status || !fm.layer || !fm.type) {
     throw new Error(`${filePath}: missing required frontmatter fields (id, status, layer, type)`);
   }
+  if (fm.status === 'closed' && !fm.reason?.trim()) {
+    throw new Error(`${filePath}: closed stories must have a non-empty 'reason' field`);
+  }
   return { frontmatter: fm, content, filePath, sprint: deriveSprintFromPath(filePath) };
 }
 
@@ -64,7 +67,7 @@ export function collectMdFiles(dir: string): string[] {
 }
 
 export function walkStories(jiraDir: string): Story[] {
-  return ['backlog', 'sprints', 'done']
+  return ['backlog', 'sprints', 'done', 'closed']
     .flatMap(dir => collectMdFiles(path.join(jiraDir, dir)))
     .map(parseStoryFile);
 }
