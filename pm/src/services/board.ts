@@ -16,24 +16,23 @@ export type BoardItem = {
 
 export async function findActiveSprint(cwd: string): Promise<string | null> {
 	const sprintsDir = join(cwd, '.pm', 'sprints')
-	let dirents: Awaited<ReturnType<typeof readdir>>
 	try {
-		dirents = await readdir(sprintsDir, { withFileTypes: true })
+		const dirents = await readdir(sprintsDir, { withFileTypes: true, encoding: 'utf8' })
+		const names = dirents
+			.filter((d) => d.isDirectory() && /^sprint-\d+$/.test(d.name))
+			.map((d) => d.name)
+			.sort()
+		return names.at(-1) ?? null
 	} catch {
 		return null
 	}
-	const names = dirents
-		.filter((d) => d.isDirectory() && /^sprint-\d+$/.test(d.name))
-		.map((d) => d.name)
-		.sort()
-	return names.at(-1) ?? null
 }
 
 export async function readSprintItems(cwd: string, sprint: string): Promise<BoardItem[]> {
 	const sprintDir = join(cwd, '.pm', 'sprints', sprint)
 	let files: string[]
 	try {
-		const dirents = await readdir(sprintDir, { withFileTypes: true })
+		const dirents = await readdir(sprintDir, { withFileTypes: true, encoding: 'utf8' })
 		files = dirents.filter((d) => d.isFile() && d.name.endsWith('.md')).map((d) => d.name)
 	} catch {
 		return []

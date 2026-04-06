@@ -3,8 +3,9 @@ import { PmError } from '../services/scaffold.ts'
 import type { CommandDef } from '../types/command.ts'
 import { VERSION } from '../version.ts'
 import { initCommand } from './init/command.ts'
+import { lsCommand } from './ls/command.ts'
 
-const COMMANDS: CommandDef[] = [initCommand]
+const COMMANDS: CommandDef[] = [initCommand, lsCommand]
 
 export function buildProgram(): Command {
 	const program = new Command('pm')
