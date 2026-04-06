@@ -1,0 +1,28 @@
+{
+  "name": "@itproto/pm",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "pm": "src/entrypoints/pm.ts"
+  },
+  "scripts": {
+    "dev": "bun src/entrypoints/pm.ts",
+    "test": "bun test",
+    "lint": "biome check src/",
+    "check": "biome check src/ && tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@commander-js/extra-typings": "^13.1.0",
+    "chalk": "^5.4.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/bun": "latest",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}
