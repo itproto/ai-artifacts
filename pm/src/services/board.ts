@@ -138,6 +138,15 @@ export function matchesAssignee(assignee: string | undefined, user: string): boo
 }
 
 export function resolveCurrentUser(): string | null {
+	// Prefer GitHub username extracted from remote URL (e.g. github.com/itproto/repo → itproto)
+	try {
+		const remote = execSync('git remote get-url origin', { encoding: 'utf8' }).trim()
+		const match = remote.match(/github\.com[:/]([^/]+)\//)
+		if (match) return match[1]
+	} catch {
+		// fall through
+	}
+	// Fallback to git config user.name
 	try {
 		return execSync('git config user.name', { encoding: 'utf8' }).trim()
 	} catch {
