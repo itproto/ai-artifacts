@@ -9,4 +9,4 @@ if (process.argv[2] === '--version' || process.argv[2] === '-V') {
 
 const { buildProgram } = await import('../commands/registry.ts')
 const program = buildProgram()
-program.parse()
+await program.parseAsync()

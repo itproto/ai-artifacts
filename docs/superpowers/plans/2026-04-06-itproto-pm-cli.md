@@ -267,7 +267,7 @@ cd pm
 bun install
 ```
 
-Expected: `bun.lockb` created, `node_modules/` populated.
+Expected: `bun.lock` created, `node_modules/` populated.
 
 - [ ] **Step 6: Verify typecheck runs (will fail on missing src — that's fine)**
 
@@ -282,7 +282,7 @@ Expected: error about missing files or empty project — that's fine. Confirms t
 
 ```bash
 cd ..
-git add pm/package.json pm/tsconfig.json pm/biome.json pm/bunfig.toml pm/bun.lockb
+git add pm/package.json pm/tsconfig.json pm/biome.json pm/bunfig.toml pm/bun.lock
 git commit -m "chore(TASK-003): scaffold @itproto/pm package with config files"
 ```
 

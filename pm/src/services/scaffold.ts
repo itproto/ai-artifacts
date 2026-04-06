@@ -1,10 +1,11 @@
 import { cp, readdir, rm, stat } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { join, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { InitResult } from '../cli/output.ts'
 import type { GlobalOpts } from '../schemas/options.ts'
 
-// Resolves to pm/template/ regardless of how the binary is invoked
-const TEMPLATE_DIR = new URL('../../template', import.meta.url).pathname
+// fileURLToPath handles percent-encoding and Windows paths correctly
+const TEMPLATE_DIR = fileURLToPath(new URL('../../template', import.meta.url))
 
 export class PmError extends Error {
 	constructor(
@@ -47,17 +48,27 @@ export const ScaffoldService = {
 				path: pmDir,
 				filesCreated: 0,
 				dryRun: true,
-				dryRunFiles: contentFiles.map((f) => f.slice(TEMPLATE_DIR.length + 1)),
+				dryRunFiles: contentFiles.map((f) => relative(TEMPLATE_DIR, f)),
 			}
 		}
 
-		await cp(TEMPLATE_DIR, pmDir, { recursive: true })
+		try {
+			await cp(TEMPLATE_DIR, pmDir, { recursive: true })
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Unknown filesystem error'
+			throw new PmError(`Error: failed to scaffold .pm/ in ${targetDir}: ${message}`, 1)
+		}
 
 		// Remove .gitkeep markers — directories already created by cp
 		const gitkeepFiles = allFiles.filter((f) => f.endsWith('.gitkeep'))
 		for (const f of gitkeepFiles) {
-			const rel = f.slice(TEMPLATE_DIR.length)
-			await rm(join(pmDir, rel), { force: true })
+			const rel = relative(TEMPLATE_DIR, f)
+			try {
+				await rm(join(pmDir, rel), { force: true })
+			} catch (error) {
+				const message = error instanceof Error ? error.message : 'Unknown filesystem error'
+				throw new PmError(`Error: failed to remove template marker ${rel}: ${message}`, 1)
+			}
 		}
 
 		return {

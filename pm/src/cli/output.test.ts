@@ -23,8 +23,11 @@ function captureLog(fn: () => void): string[] {
 	const logs: string[] = []
 	const orig = console.log
 	console.log = (msg: string) => logs.push(msg)
-	fn()
-	console.log = orig
+	try {
+		fn()
+	} finally {
+		console.log = orig
+	}
 	return logs
 }
 
