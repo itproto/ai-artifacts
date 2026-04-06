@@ -2,7 +2,7 @@
 id: TASK-003
 title: Scaffold @itproto/pm package
 type: task
-status: in-progress
+status: done
 layer: backend
 assignee: 
 blockedBy: []

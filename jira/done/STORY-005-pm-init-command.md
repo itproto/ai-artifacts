@@ -2,7 +2,7 @@
 id: STORY-005
 title: pm init scaffolding command
 type: story
-status: ready
+status: done
 epic: EPIC-003
 layer: backend
 assignee: 
