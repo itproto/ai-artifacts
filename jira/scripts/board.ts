@@ -7,13 +7,14 @@ import type { Story } from './utils.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const jiraDir = path.resolve(__dirname, '..');
 
-const STATUSES = ['backlog', 'ready', 'in-progress', 'review', 'done'] as const;
+const STATUSES = ['backlog', 'ready', 'in-progress', 'review', 'done', 'closed'] as const;
 const STATUS_LABELS: Record<string, string> = {
   backlog: 'Backlog',
   ready: 'Ready',
   'in-progress': 'In Progress',
   review: 'Review',
   done: 'Done',
+  closed: 'Closed',
 };
 
 type StoryWithGherkin = Story & { hasGherkin: boolean };

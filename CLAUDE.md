@@ -12,7 +12,8 @@ This project uses a file-based backlog in the `jira/` folder.
 ### Story lifecycle rules
 - Do not start implementing a story that has no Gherkin scenarios
 - Move a story file to `jira/done/` when implementation is complete
-- Update `jira/SPRINT.md` when a story moves to done
+- Move to `jira/closed/` if cancelled/deferred; set `status: closed` and populate `reason:` field
+- Update `jira/SPRINT.md` when a story changes status
 - Do not edit files in `jira/features/` — they are generated
 
 ### Commit format (Conventional Commits)

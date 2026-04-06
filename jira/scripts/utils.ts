@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import type { Node, Parent } from 'unist';
 
-export type StoryStatus = 'backlog' | 'ready' | 'in-progress' | 'review' | 'done';
+export type StoryStatus = 'backlog' | 'ready' | 'in-progress' | 'review' | 'done' | 'closed';
 export type StoryLayer = 'frontend' | 'backend' | 'fullstack';
 export type StoryType = 'story' | 'task';
 
@@ -20,6 +20,7 @@ export interface StoryFrontmatter {
   assignee?: string;
   points?: number;
   blockedBy?: string[];
+  reason?: string;  // for closed: cancelled, deferred, duplicate, etc.
 }
 
 export interface Story {

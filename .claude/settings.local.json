@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(npm install:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm --version)",
+      "Bash(python3 -c ':*)",
+      "Bash(npm test:*)",
+      "Bash(node --input-type=module)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

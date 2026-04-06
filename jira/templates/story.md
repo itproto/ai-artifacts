@@ -8,6 +8,7 @@ layer: frontend  # frontend | backend | fullstack
 assignee: 
 points: 
 blockedBy: []
+reason:  # for closed: cancelled, deferred, duplicate, etc.
 ---
 
 ## User Story
