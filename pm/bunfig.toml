@@ -1,0 +1,3 @@
+# Bun configuration for @itproto/pm
+[test]
+# test files: src/**/*.test.ts

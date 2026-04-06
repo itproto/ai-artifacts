@@ -1,0 +1,36 @@
+import { Command } from '@commander-js/extra-typings'
+import { PmError } from '../services/scaffold.ts'
+import type { CommandDef } from '../types/command.ts'
+import { VERSION } from '../version.ts'
+import { initCommand } from './init/command.ts'
+
+const COMMANDS: CommandDef[] = [initCommand]
+
+export function buildProgram(): Command {
+	const program = new Command('pm')
+		.version(VERSION)
+		.option('--json', 'output as JSON', false)
+		.option('--dry-run', 'preview without writing', false)
+		.option('--cwd <path>', 'working directory', process.cwd())
+
+	for (const def of COMMANDS) {
+		program
+			.command(def.name)
+			.description(def.description)
+			.action(async () => {
+				const rawOpts = program.opts()
+				const mod = await def.load()
+				try {
+					await mod.run(rawOpts as Record<string, unknown>)
+				} catch (err) {
+					if (err instanceof PmError) {
+						console.error(err.message)
+						process.exit(err.exitCode)
+					}
+					throw err
+				}
+			})
+	}
+
+	return program
+}

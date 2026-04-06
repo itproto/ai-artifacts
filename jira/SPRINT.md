@@ -16,3 +16,5 @@ Deliver a working Todo app: view and create todos, with user auth.
 
 ## Done
 - TASK-001 — Scaffold frontend
+- TASK-003 — Scaffold @itproto/pm package
+- STORY-005 — pm init command
