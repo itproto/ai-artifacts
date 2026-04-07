@@ -16,7 +16,7 @@ As a developer, I can run `pm ls`
 so that I can see the current sprint board without leaving the terminal.
 
 ## Spec
-Reads the active sprint directory and SPRINT.md. Groups stories/tasks by status and renders a compact board to stdout. No API calls — pure file reads.
+Reads the active sprint directory and its story/task markdown files. Groups stories/tasks by status and renders a compact board to stdout. No API calls — pure file reads.
 
 ## Acceptance Criteria
 

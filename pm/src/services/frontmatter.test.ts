@@ -37,4 +37,24 @@ describe('parseFrontmatter', () => {
 		const content = '---\nreason: \n---'
 		expect(parseFrontmatter(content)).toMatchObject({ reason: '' })
 	})
+
+	test('handles CRLF line endings', () => {
+		const content = '---\r\nid: STORY-001\r\ntitle: My story\r\n---\r\nbody'
+		expect(parseFrontmatter(content)).toMatchObject({ id: 'STORY-001', title: 'My story' })
+	})
+
+	test('strips inline YAML comments from unquoted values', () => {
+		const content = '---\nlayer: frontend  # frontend | backend | fullstack\n---'
+		expect(parseFrontmatter(content)).toMatchObject({ layer: 'frontend' })
+	})
+
+	test('treats a value that is only a comment as empty', () => {
+		const content = '---\nreason:  # for closed: cancelled, deferred, duplicate, etc.\n---'
+		expect(parseFrontmatter(content)).toMatchObject({ reason: '' })
+	})
+
+	test('does not strip # from quoted values', () => {
+		const content = '---\ntag: "#important"\n---'
+		expect(parseFrontmatter(content)).toMatchObject({ tag: '#important' })
+	})
 })

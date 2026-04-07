@@ -19,7 +19,7 @@ pm ls --me      # only items assigned to current git user
 Sections are stacked vertically. Only non-empty sections are shown. Each item is a single line.
 
 ```
-Sprint 01
+Sprint sprint-01
 
 ● In Progress
   STORY-001  pm ls — sprint board view    @itproto  2pt
@@ -46,9 +46,10 @@ The active sprint is the highest-numbered `sprint-NN` directory under `.pm/sprin
 
 ## `--me` Resolution
 
-1. Read `git config user.name`
-2. Strip leading `@` if present, lowercase both sides for comparison
-3. Filter items where `assignee` matches
+1. Try to extract GitHub username from `git remote get-url origin` (e.g. `github.com/itproto/repo` → `itproto`)
+2. Fall back to `git config user.name` if no GitHub remote is found
+3. Strip leading `@` if present, lowercase both sides for comparison
+4. Filter items where `assignee` matches
 
 ## Architecture
 

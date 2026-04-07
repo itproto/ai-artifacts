@@ -26,10 +26,10 @@ export async function run(rawOpts: Record<string, unknown>): Promise<void> {
 	let items = await readSprintItems(opts.cwd, sprint)
 
 	if (opts.me) {
-		const user = resolveCurrentUser()
+		const user = resolveCurrentUser(opts.cwd)
 		if (!user) {
 			throw new PmError(
-				'Error: could not resolve current user from git config user.name',
+				'Error: could not resolve current user from GitHub remote URL or git config user.name',
 				1,
 			)
 		}

@@ -21,7 +21,11 @@ export async function findActiveSprint(cwd: string): Promise<string | null> {
 		const names = dirents
 			.filter((d) => d.isDirectory() && /^sprint-\d+$/.test(d.name))
 			.map((d) => d.name)
-			.sort()
+			.sort(
+				(a, b) =>
+					Number.parseInt(a.slice('sprint-'.length), 10) -
+					Number.parseInt(b.slice('sprint-'.length), 10),
+			)
 		return names.at(-1) ?? null
 	} catch {
 		return null
@@ -33,7 +37,10 @@ export async function readSprintItems(cwd: string, sprint: string): Promise<Boar
 	let files: string[]
 	try {
 		const dirents = await readdir(sprintDir, { withFileTypes: true, encoding: 'utf8' })
-		files = dirents.filter((d) => d.isFile() && d.name.endsWith('.md')).map((d) => d.name)
+		files = dirents
+			.filter((d) => d.isFile() && d.name.endsWith('.md'))
+			.map((d) => d.name)
+			.sort((a, b) => a.localeCompare(b))
 	} catch {
 		return []
 	}
@@ -137,10 +144,10 @@ export function matchesAssignee(assignee: string | undefined, user: string): boo
 	return normalize(assignee) === normalize(user)
 }
 
-export function resolveCurrentUser(): string | null {
+export function resolveCurrentUser(cwd: string): string | null {
 	// Prefer GitHub username extracted from remote URL (e.g. github.com/itproto/repo → itproto)
 	try {
-		const remote = execSync('git remote get-url origin', { encoding: 'utf8' }).trim()
+		const remote = execSync('git remote get-url origin', { cwd, encoding: 'utf8' }).trim()
 		const match = remote.match(/github\.com[:/]([^/]+)\//)
 		if (match) return match[1]
 	} catch {
@@ -148,7 +155,7 @@ export function resolveCurrentUser(): string | null {
 	}
 	// Fallback to git config user.name
 	try {
-		return execSync('git config user.name', { encoding: 'utf8' }).trim()
+		return execSync('git config user.name', { cwd, encoding: 'utf8' }).trim()
 	} catch {
 		return null
 	}
