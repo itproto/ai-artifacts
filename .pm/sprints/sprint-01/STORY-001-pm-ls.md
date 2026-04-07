@@ -2,7 +2,7 @@
 id: STORY-001
 title: pm ls — show sprint board in terminal
 type: story
-status: in-progress
+status: done
 epic: EPIC-002
 layer: cli
 assignee: "@itproto"
