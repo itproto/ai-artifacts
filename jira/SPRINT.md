@@ -15,6 +15,7 @@ Deliver a working Todo app: view and create todos, with user auth.
 
 ## In Progress
 - STORY-006 — pm new command (quick-capture story creation)
+- STORY-007 — pm rm command (close story with fuzzy search)
 
 ## Done
 - TASK-001 — Scaffold frontend
