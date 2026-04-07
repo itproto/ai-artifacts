@@ -13,6 +13,9 @@ Deliver a working Todo app: view and create todos, with user auth.
 ## Blocked
 - STORY-002 — waiting on TASK-002
 
+## In Progress
+- STORY-006 — pm new command (quick-capture story creation)
+
 ## Done
 - TASK-001 — Scaffold frontend
 - TASK-003 — Scaffold @itproto/pm package

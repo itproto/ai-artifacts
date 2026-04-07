@@ -5,5 +5,5 @@ export type CommandDef = {
 	description: string
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	setup?: (cmd: Command<any, any>) => void
-	load: () => Promise<{ run: (rawOpts: Record<string, unknown>) => Promise<void> }>
+	load: () => Promise<{ run: (rawOpts: Record<string, unknown>, args?: string[]) => Promise<void> }>
 }
