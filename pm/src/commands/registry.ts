@@ -3,8 +3,9 @@ import { PmError } from '../services/scaffold.ts'
 import type { CommandDef } from '../types/command.ts'
 import { VERSION } from '../version.ts'
 import { initCommand } from './init/command.ts'
+import { lsCommand } from './ls/command.ts'
 
-const COMMANDS: CommandDef[] = [initCommand]
+const COMMANDS: CommandDef[] = [initCommand, lsCommand]
 
 export function buildProgram(): Command {
 	const program = new Command('pm')
@@ -14,22 +15,21 @@ export function buildProgram(): Command {
 		.option('--cwd <path>', 'working directory', process.cwd())
 
 	for (const def of COMMANDS) {
-		program
-			.command(def.name)
-			.description(def.description)
-			.action(async () => {
-				const rawOpts = program.opts()
-				const mod = await def.load()
-				try {
-					await mod.run(rawOpts as Record<string, unknown>)
-				} catch (err) {
-					if (err instanceof PmError) {
-						console.error(err.message)
-						process.exit(err.exitCode)
-					}
-					throw err
+		const sub = program.command(def.name).description(def.description)
+		if (def.setup) def.setup(sub)
+		sub.action(async () => {
+			const rawOpts = { ...program.opts(), ...sub.opts() }
+			const mod = await def.load()
+			try {
+				await mod.run(rawOpts as Record<string, unknown>)
+			} catch (err) {
+				if (err instanceof PmError) {
+					console.error(err.message)
+					process.exit(err.exitCode)
 				}
-			})
+				throw err
+			}
+		})
 	}
 
 	return program
