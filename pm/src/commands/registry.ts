@@ -6,8 +6,9 @@ import { initCommand } from './init/command.ts'
 import { lsCommand } from './ls/command.ts'
 import { newCommand } from './new/command.ts'
 import { rmCommand } from './rm/command.ts'
+import { catCommand } from './cat/command.ts'
 
-const COMMANDS: CommandDef[] = [initCommand, lsCommand, newCommand, rmCommand]
+const COMMANDS: CommandDef[] = [initCommand, lsCommand, newCommand, rmCommand, catCommand]
 
 export function buildProgram(): Command {
 	const program = new Command('pm')
