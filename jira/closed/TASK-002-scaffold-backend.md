@@ -2,7 +2,8 @@
 id: TASK-002
 title: Scaffold backend (Node.js + Express)
 type: task
-status: in-progress
+status: closed
+reason: sample data — never real work
 layer: backend
 assignee: bob
 ---

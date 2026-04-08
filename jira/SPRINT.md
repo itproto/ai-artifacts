@@ -7,12 +7,6 @@ Deliver a working Todo app: view and create todos, with user auth.
 - alice — frontend
 - bob — backend
 
-## In Progress
-- TASK-002 (bob) — Scaffold backend
-
-## Blocked
-- STORY-002 — waiting on TASK-002
-
 ## Done
 - TASK-001 — Scaffold frontend
 - TASK-003 — Scaffold @itproto/pm package
