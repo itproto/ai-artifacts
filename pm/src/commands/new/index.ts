@@ -94,8 +94,8 @@ function slugify(title: string): string {
 
 // Quote a YAML string value if it contains characters that would break bare YAML
 function yamlValue(v: string): string {
-	if (v === '' || v === '[]') return v
-	if (/[:#\[\]{},&*?|<>=!%@`'"\\]/.test(v) || /^\s|\s$/.test(v)) {
+	if (v === '' || (v.startsWith('[') && v.endsWith(']'))) return v
+	if (/[:#,&*?|<>=!%@`'"\\]/.test(v) || /^\s|\s$/.test(v)) {
 		return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 	}
 	return v
@@ -114,6 +114,11 @@ function buildFrontmatter(id: string, parsed: ParsedArgs): string {
 		blockedBy: '[]',
 		reason: '',
 		...parsed.extra,
+	}
+
+	// Normalize blockedBy: plain string → [value] so board parser reads it as an array
+	if (fields.blockedBy && !fields.blockedBy.startsWith('[')) {
+		fields.blockedBy = `[${fields.blockedBy}]`
 	}
 
 	const lines = Object.entries(fields).map(([k, v]) => `${k}: ${yamlValue(v)}`)
