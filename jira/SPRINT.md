@@ -8,8 +8,9 @@ Deliver a working Todo app: view and create todos, with user auth.
 - bob — backend
 
 ## In Progress
-- STORY-001 (alice) — View todos list
 - TASK-002 (bob) — Scaffold backend
+- STORY-006 — pm new command (quick-capture story creation)
+- STORY-007 — pm rm command (close story with fuzzy search)
 
 ## Blocked
 - STORY-002 — waiting on TASK-002
@@ -18,3 +19,4 @@ Deliver a working Todo app: view and create todos, with user auth.
 - TASK-001 — Scaffold frontend
 - TASK-003 — Scaffold @itproto/pm package
 - STORY-005 — pm init command
+- STORY-001 — pm ls command
