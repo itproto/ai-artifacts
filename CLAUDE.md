@@ -2,19 +2,34 @@
 
 ## Project Management System
 
-This project uses a file-based backlog in the `jira/` folder.
+This project uses the `pm` CLI (`@itproto/pm`) with a file-based board in `.pm/`.
 
 ### Before starting any work session
-1. Read `jira/SPRINT.md` — this is the current sprint state
-2. Find the relevant story file in `jira/sprints/<sprint>/` or `jira/backlog/`
+1. Run `pm ls` — see the current sprint state
+2. Find the relevant story file in `.pm/sprints/<sprint>/` or `.pm/backlog/`
 3. Read the story's `## Acceptance Criteria` — Gherkin is the source of truth for behaviour
 
 ### Story lifecycle rules
 - Do not start implementing a story that has no Gherkin scenarios
-- Move a story file to `jira/done/` when implementation is complete
-- Move to `jira/closed/` if cancelled/deferred; set `status: closed` and populate `reason:` field
-- Update `jira/SPRINT.md` when a story changes status
-- Do not edit files in `jira/features/` — they are generated
+- Move a story file to `.pm/done/` when implementation is complete
+- Use `pm rm <id> <reason>` to close/cancel a story (moves to `.pm/closed/`)
+- Do not edit files in `.pm/examples/` — they are reference only
+
+### Adding a new story
+```
+pm new "title @assignee #layer #EPIC-NNN points:N"
+pm new "title @assignee #layer" -o   # open in $EDITOR immediately
+```
+
+### Common pm commands
+```
+pm ls                        # show sprint board
+pm ls --me                   # show only your items
+pm new "Fix auth @me #backend points:3"
+pm rm STORY-006              # close by ID (prompts for reason)
+pm rm "auth flow" cancelled  # fuzzy search + reason
+pm rm                        # interactive picker
+```
 
 ### Commit format (Conventional Commits)
 ```
@@ -24,12 +39,8 @@ chore(TASK-001): scaffold Vite + Tailwind
 docs(STORY-002): add missing Gherkin scenario
 ```
 
-### Running jira scripts (from `jira/`)
-- `npm run board` — regenerate BOARD.md
-- `npm run validate` — check all in-progress stories have Gherkin
-- `npm run features` — extract Gherkin to jira/features/*.feature
-
-### Adding a new story
-1. Copy `jira/templates/story.md`
-2. Save to `jira/backlog/STORY-NNN-slug.md`
-3. Fill in frontmatter and write Gherkin before moving to `ready`
+### Running pm (from repo root)
+```
+bun run pm/src/entrypoints/pm.ts <command>
+```
+Or if installed globally: `pm <command>`
