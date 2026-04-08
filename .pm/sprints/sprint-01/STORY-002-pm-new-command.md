@@ -2,7 +2,7 @@
 id: STORY-002
 title: pm new — quick-capture story creation
 type: story
-status: in-progress
+status: done
 epic: EPIC-002
 layer: cli
 assignee: "@itproto"

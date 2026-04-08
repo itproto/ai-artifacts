@@ -2,7 +2,7 @@
 id: STORY-007
 title: pm rm — close story with fuzzy search
 type: story
-status: in-progress
+status: done
 epic: EPIC-003
 layer: backend
 assignee: "@itproto"

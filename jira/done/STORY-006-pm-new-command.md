@@ -2,7 +2,7 @@
 id: STORY-006
 title: pm new command — quick-capture story creation
 type: story
-status: in-progress
+status: done
 epic: EPIC-003
 layer: backend
 assignee:
