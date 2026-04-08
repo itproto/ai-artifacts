@@ -1,7 +1,7 @@
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { describe, expect, it, afterEach } from 'vitest'
+import { describe, expect, it, afterEach } from 'bun:test'
 import { nextId } from './id.ts'
 
 let tmpDir: string

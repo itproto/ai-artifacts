@@ -1,5 +1,5 @@
-import { execSync } from 'node:child_process'
-import { readFile, writeFile } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { GlobalOptsSchema } from '../../schemas/options.ts'
@@ -92,6 +92,15 @@ function slugify(title: string): string {
 		.slice(0, 40)
 }
 
+// Quote a YAML string value if it contains characters that would break bare YAML
+function yamlValue(v: string): string {
+	if (v === '' || v === '[]') return v
+	if (/[:#\[\]{},&*?|<>=!%@`'"\\]/.test(v) || /^\s|\s$/.test(v)) {
+		return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+	}
+	return v
+}
+
 function buildFrontmatter(id: string, parsed: ParsedArgs): string {
 	const fields: Record<string, string> = {
 		id,
@@ -102,11 +111,12 @@ function buildFrontmatter(id: string, parsed: ParsedArgs): string {
 		layer: parsed.layer ?? '',
 		assignee: parsed.assignee ?? '',
 		points: '',
-		'blockedBy': '[]',
+		blockedBy: '[]',
+		reason: '',
 		...parsed.extra,
 	}
 
-	const lines = Object.entries(fields).map(([k, v]) => `${k}: ${v}`)
+	const lines = Object.entries(fields).map(([k, v]) => `${k}: ${yamlValue(v)}`)
 	return `---\n${lines.join('\n')}\n---`
 }
 
@@ -154,11 +164,13 @@ export async function run(rawOpts: Record<string, unknown>, args?: string[]): Pr
 		parsed.assignee = user
 	}
 
+	const boardRoot = join(opts.cwd, '.pm')
 	const idType = parsed.type === 'task' ? 'TASK' : 'STORY'
-	const id = await nextId(opts.cwd, idType)
+	const id = await nextId(boardRoot, idType)
 	const slug = slugify(parsed.title)
 	const filename = `${id}-${slug}.md`
-	const destPath = join(opts.cwd, '.pm', 'backlog', filename)
+	const backlogDir = join(boardRoot, 'backlog')
+	const destPath = join(backlogDir, filename)
 
 	const template = await loadTemplate(opts.cwd, parsed.type)
 	const frontmatter = buildFrontmatter(id, parsed)
@@ -170,18 +182,21 @@ export async function run(rawOpts: Record<string, unknown>, args?: string[]): Pr
 		return
 	}
 
-	await writeFile(destPath, content, 'utf8')
+	try {
+		await mkdir(backlogDir, { recursive: true })
+		await writeFile(destPath, content, { encoding: 'utf8', flag: 'wx' })
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err)
+		throw new PmError(`Error: could not write ${destPath}: ${msg}`, 1)
+	}
 
 	console.log(`created  ${destPath}`)
 	console.log(`         ${summaryLine(id, parsed)}`)
 
 	if (opts.open) {
-		const editor = process.env.EDITOR ?? 'vi'
-		try {
-			execSync(`${editor} "${destPath}"`, { stdio: 'inherit' })
-		} catch {
-			// editor exited non-zero (e.g. user quit vim with :q!) — not an error
-		}
+		// Split $EDITOR on spaces to support editors-with-args (e.g. "code --wait")
+		const [editor, ...editorArgs] = (process.env.EDITOR ?? 'vi').split(' ')
+		spawnSync(editor, [...editorArgs, destPath], { stdio: 'inherit' })
 	}
 }
 
