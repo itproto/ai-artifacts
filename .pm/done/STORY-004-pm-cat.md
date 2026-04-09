@@ -2,7 +2,7 @@
 id: STORY-004
 title: pm cat — view a story in terminal or editor
 type: story
-status: in-progress
+status: done
 epic: 
 layer: cli
 assignee: itproto
@@ -62,10 +62,10 @@ Feature: pm cat command
 ```
 
 ## Tasks
-- [ ] `pm/src/commands/cat/command.ts` — CommandDef
-- [ ] `pm/src/commands/cat/index.ts` — scan all folders, fuzzy pick, print or open
-- [ ] Register in registry
-- [ ] Tests
+- [x] `pm/src/commands/cat/command.ts` — CommandDef
+- [x] `pm/src/commands/cat/index.ts` — scan all folders, fuzzy pick, print or open
+- [x] Register in registry
+- [x] Tests
 
 ## Notes
 Scans done/ and closed/ too — useful for reviewing finished work.
