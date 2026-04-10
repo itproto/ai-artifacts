@@ -1,43 +1,45 @@
+import { spawnSync } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import * as readline from "node:readline/promises";
+import { z } from "zod";
 import { GlobalOptsSchema } from "../../schemas/options.ts";
 import type { BoardItem } from "../../services/board.ts";
-import { closeStory, findStoryFile } from "../../services/close.ts";
 import { parseFrontmatter } from "../../services/frontmatter.ts";
 import { PmError } from "../../services/scaffold.ts";
 import { fuzzySearch, isExactId } from "../../services/search.ts";
 
-const RmOptsSchema = GlobalOptsSchema.extend({});
+const CatOptsSchema = GlobalOptsSchema.extend({
+	open: z.boolean().default(false),
+});
+
+const SCAN_DIRS = ["backlog", "sprints", "done", "closed"];
 
 export async function run(rawOpts: Record<string, unknown>, args?: string[]): Promise<void> {
-	const opts = RmOptsSchema.parse(rawOpts);
+	const opts = CatOptsSchema.parse(rawOpts);
 	const pmDir = join(opts.cwd, ".pm");
 	const query = args?.[0];
-	const reasonArg = args?.[1];
 
-	const items = await loadOpenItems(pmDir);
+	const { items, paths } = await loadAllItems(pmDir);
 
 	if (items.length === 0) {
-		console.log("No open stories or tasks found.");
+		console.log("No stories or tasks found.");
 		return;
 	}
 
-	// Resolve which item to close
 	let selected: BoardItem;
 
 	if (!query) {
-		selected = await pickFromList(items, "Select story to close:");
+		selected = await pickFromList(items, "Select story or task:");
 	} else if (isExactId(query)) {
 		const match = items.find((i) => i.id.toUpperCase() === query.toUpperCase());
-		if (!match) throw new PmError(`Error: ${query.toUpperCase()} not found in open stories.`, 1);
+		if (!match) throw new PmError(`Error: ${query.toUpperCase()} not found.`, 1);
 		selected = match;
 	} else {
 		const results = fuzzySearch(items, query);
 		if (results.length === 0) throw new PmError(`Error: no stories matching "${query}"`, 1);
 		if (results.length === 1) {
 			selected = results[0].item;
-			console.log(`matched  ${selected.id}  ${selected.title}`);
 		} else {
 			selected = await pickFromList(
 				results.map((r) => r.item),
@@ -46,25 +48,23 @@ export async function run(rawOpts: Record<string, unknown>, args?: string[]): Pr
 		}
 	}
 
-	// Resolve reason
-	const reason = reasonArg ?? (await promptReason());
-
-	if (opts.dryRun) {
-		console.log(
-			`dry-run  would close ${selected.id}  ${selected.title}  (${reason || "no reason"})`,
-		);
-		return;
-	}
-
-	const filePath = await findStoryFile(pmDir, selected.id);
+	const filePath = paths.get(selected.id);
 	if (!filePath) throw new PmError(`Error: file for ${selected.id} not found on disk.`, 1);
 
-	const result = await closeStory(pmDir, filePath, reason);
-	console.log(`closed   ${result.to}${reason ? `  (${reason})` : ""}`);
+	if (opts.open) {
+		const [editor, ...editorArgs] = (process.env.EDITOR ?? "vi").split(" ");
+		spawnSync(editor, [...editorArgs, filePath], { stdio: "inherit" });
+	} else {
+		const content = await readFile(filePath, "utf8");
+		process.stdout.write(content);
+	}
 }
 
-async function loadOpenItems(pmDir: string): Promise<BoardItem[]> {
+async function loadAllItems(
+	pmDir: string,
+): Promise<{ items: BoardItem[]; paths: Map<string, string> }> {
 	const items: BoardItem[] = [];
+	const paths = new Map<string, string>();
 
 	async function scanDir(dir: string): Promise<void> {
 		let entries: import("node:fs").Dirent[];
@@ -77,17 +77,18 @@ async function loadOpenItems(pmDir: string): Promise<BoardItem[]> {
 			if (entry.isDirectory()) {
 				await scanDir(join(dir, entry.name));
 			} else if (entry.isFile() && entry.name.endsWith(".md")) {
-				const content = await readFile(join(dir, entry.name), "utf8");
+				const filePath = join(dir, entry.name);
+				const content = await readFile(filePath, "utf8");
 				const fm = parseFrontmatter(content);
 				const id = typeof fm.id === "string" ? fm.id : undefined;
 				if (!id) continue;
-				const status = typeof fm.status === "string" ? fm.status : "backlog";
-				if (status === "closed") continue;
+				if (paths.has(id)) continue; // skip duplicates
+				paths.set(id, filePath);
 				items.push({
 					id,
 					title: typeof fm.title === "string" ? fm.title : "",
 					type: fm.type === "task" ? "task" : "story",
-					status,
+					status: typeof fm.status === "string" ? fm.status : "backlog",
 					assignee: typeof fm.assignee === "string" && fm.assignee !== "" ? fm.assignee : undefined,
 					points: undefined,
 					blockedBy: [],
@@ -96,19 +97,20 @@ async function loadOpenItems(pmDir: string): Promise<BoardItem[]> {
 		}
 	}
 
-	await scanDir(join(pmDir, "backlog"));
-	await scanDir(join(pmDir, "sprints"));
+	for (const sub of SCAN_DIRS) {
+		await scanDir(join(pmDir, sub));
+	}
 
-	return items;
+	return { items, paths };
 }
 
 async function pickFromList(items: BoardItem[], prompt: string): Promise<BoardItem> {
 	console.log(`\n${prompt}`);
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i];
-		const assignee = item.assignee ? `  ${item.assignee}` : "";
+		const status = item.status.padEnd(12);
 		console.log(
-			`  ${String(i + 1).padStart(2)}  ${item.id.padEnd(10)}  ${item.title.slice(0, 50)}${assignee}`,
+			`  ${String(i + 1).padStart(2)}  ${item.id.padEnd(10)}  ${status}  ${item.title.slice(0, 50)}`,
 		);
 	}
 	console.log();
@@ -121,16 +123,6 @@ async function pickFromList(items: BoardItem[], prompt: string): Promise<BoardIt
 			throw new PmError("Error: invalid selection.", 1);
 		}
 		return items[n - 1];
-	} finally {
-		rl.close();
-	}
-}
-
-async function promptReason(): Promise<string> {
-	const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-	try {
-		const answer = await rl.question("Reason (blank to skip): ");
-		return answer.trim();
 	} finally {
 		rl.close();
 	}
