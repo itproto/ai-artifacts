@@ -1,5 +1,4 @@
-import { readFile, rename, writeFile } from "node:fs/promises";
-import { readdir } from "node:fs/promises";
+import { readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 
 const SCAN_DIRS = ["backlog", "sprints"];
@@ -13,7 +12,7 @@ export async function findStoryFile(pmDir: string, id: string): Promise<string |
 	const upper = id.toUpperCase();
 
 	async function scanDir(dir: string): Promise<string | null> {
-		let entries: import("node:fs").Dirent<string>[];
+		let entries: import("node:fs").Dirent[];
 		try {
 			entries = await readdir(dir, { withFileTypes: true, encoding: "utf8" });
 		} catch {

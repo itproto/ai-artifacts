@@ -67,7 +67,7 @@ async function loadOpenItems(pmDir: string): Promise<BoardItem[]> {
 	const items: BoardItem[] = [];
 
 	async function scanDir(dir: string): Promise<void> {
-		let entries: import("node:fs").Dirent<string>[];
+		let entries: import("node:fs").Dirent[];
 		try {
 			entries = await readdir(dir, { withFileTypes: true, encoding: "utf8" });
 		} catch {

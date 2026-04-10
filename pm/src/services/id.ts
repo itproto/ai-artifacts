@@ -19,7 +19,7 @@ async function scanMaxId(cwd: string, type: IdType): Promise<number> {
 	let max = 0;
 
 	async function walk(dir: string): Promise<void> {
-		let entries: import("node:fs").Dirent<string>[];
+		let entries: import("node:fs").Dirent[];
 		try {
 			entries = await readdir(dir, { withFileTypes: true, encoding: "utf8" });
 		} catch {

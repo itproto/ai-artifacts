@@ -30,7 +30,7 @@ export async function run(rawOpts: Record<string, unknown>, args?: string[]): Pr
 	let selected: BoardItem;
 
 	if (!query) {
-		selected = await pickFromList(items, "Select story:");
+		selected = await pickFromList(items, "Select story or task:");
 	} else if (isExactId(query)) {
 		const match = items.find((i) => i.id.toUpperCase() === query.toUpperCase());
 		if (!match) throw new PmError(`Error: ${query.toUpperCase()} not found.`, 1);
@@ -67,7 +67,7 @@ async function loadAllItems(
 	const paths = new Map<string, string>();
 
 	async function scanDir(dir: string): Promise<void> {
-		let entries: import("node:fs").Dirent<string>[];
+		let entries: import("node:fs").Dirent[];
 		try {
 			entries = await readdir(dir, { withFileTypes: true, encoding: "utf8" });
 		} catch {

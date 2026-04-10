@@ -70,10 +70,12 @@ async function makeBoard(): Promise<string> {
 async function captureStdout(fn: () => Promise<void>): Promise<string> {
 	let output = "";
 	const original = process.stdout.write.bind(process.stdout);
-	process.stdout.write = (chunk: string | Uint8Array) => {
+	const captureWrite: typeof process.stdout.write = (...args) => {
+		const [chunk] = args;
 		output += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
 		return true;
 	};
+	process.stdout.write = captureWrite;
 	try {
 		await fn();
 		return output;
@@ -160,10 +162,12 @@ describe("pm cat — interactive picker", () => {
 		console.log = (...a) => logs.push(a.join(" "));
 		let out = "";
 		const originalWrite = process.stdout.write.bind(process.stdout);
-		process.stdout.write = (chunk: string | Uint8Array) => {
+		const captureWrite: typeof process.stdout.write = (...args) => {
+			const [chunk] = args;
 			out += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
 			return true;
 		};
+		process.stdout.write = captureWrite;
 		try {
 			const runPromise = run({ cwd, open: false }, []);
 			// Push the selection after the prompt is shown
@@ -193,10 +197,12 @@ describe("pm cat — interactive picker", () => {
 		console.log = (...a) => logs.push(a.join(" "));
 		let out = "";
 		const originalWrite = process.stdout.write.bind(process.stdout);
-		process.stdout.write = (chunk: string | Uint8Array) => {
+		const captureWrite: typeof process.stdout.write = (...args) => {
+			const [chunk] = args;
 			out += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
 			return true;
 		};
+		process.stdout.write = captureWrite;
 		try {
 			const runPromise = run({ cwd, open: false }, ["pm"]);
 			await new Promise((r) => setTimeout(r, 10));
