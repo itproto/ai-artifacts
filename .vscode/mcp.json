@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "itproto/pm": {
+      "type": "stdio",
+      "command": "bun",
+      "args": ["run", "pm/src/entrypoints/mcp.ts"]
+    }
+  }
+}
