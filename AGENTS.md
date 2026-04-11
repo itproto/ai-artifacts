@@ -35,6 +35,7 @@ pm ls
 pm ls --me
 pm ls --board <name>
 pm new "title @me #backend points:3"
+pm edit STORY-004 status:review
 pm rm STORY-006
 pm rm "auth flow" cancelled
 pm cat STORY-004

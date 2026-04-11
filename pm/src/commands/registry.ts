@@ -3,6 +3,7 @@ import { PmError } from "../services/scaffold.ts";
 import type { CommandDef } from "../types/command.ts";
 import { VERSION } from "../version.ts";
 import { catCommand } from "./cat/command.ts";
+import { editCommand } from "./edit/command.ts";
 import { initCommand } from "./init/command.ts";
 import { lsCommand } from "./ls/command.ts";
 import { newCommand } from "./new/command.ts";
@@ -21,6 +22,7 @@ const COMMANDS: CommandDef[] = [
 	newCommand,
 	rmCommand,
 	catCommand,
+	editCommand,
 	startCommand,
 	doneCommand,
 	blockCommand,
