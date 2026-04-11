@@ -1,0 +1,14 @@
+source: active-sprint
+
+columns:
+  - in-progress
+  - blocked
+  - review
+  - done
+  - backlog
+
+fields:
+  - id
+  - title
+  - assignee
+  - points
