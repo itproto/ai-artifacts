@@ -78,11 +78,13 @@ function applyFilters(
 	}
 
 	if (config.filters?.statuses) {
-		result = result.filter((item) => config.filters!.statuses!.includes(item.status));
+		const { statuses } = config.filters;
+		result = result.filter((item) => statuses.includes(item.status));
 	}
 
 	if (config.filters?.type) {
-		result = result.filter((item) => item.type === config.filters!.type);
+		const { type } = config.filters;
+		result = result.filter((item) => item.type === type);
 	}
 
 	return result;
