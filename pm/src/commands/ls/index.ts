@@ -1,4 +1,3 @@
-import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import chalk from "chalk";
 import { z } from "zod";
@@ -8,10 +7,10 @@ import {
 	STATUS_ICONS,
 	findActiveSprint,
 	matchesAssignee,
+	readItemsFromDir,
 	readSprintItems,
 	resolveCurrentUser,
 } from "../../services/board.ts";
-import { parseFrontmatter } from "../../services/frontmatter.ts";
 import { PmError } from "../../services/scaffold.ts";
 import { type BoardConfig, loadBoardConfig, resolveColumn } from "./board-config.ts";
 
@@ -22,7 +21,6 @@ const LsOptsSchema = GlobalOptsSchema.extend({
 
 export async function run(rawOpts: Record<string, unknown>): Promise<void> {
 	const opts = LsOptsSchema.parse(rawOpts);
-	const config = await loadBoardConfig(opts.cwd, opts.board);
 
 	const sprint = await findActiveSprint(opts.cwd);
 	if (!sprint) {
@@ -30,6 +28,7 @@ export async function run(rawOpts: Record<string, unknown>): Promise<void> {
 		return;
 	}
 
+	const config = await loadBoardConfig(opts.cwd, opts.board);
 	let items = await loadSource(opts.cwd, config.source, sprint);
 	items = applyFilters(items, config, opts.cwd, opts.me);
 
@@ -44,49 +43,16 @@ async function loadSource(cwd: string, source: string, activeSprint: string): Pr
 		return readSprintItems(cwd, source);
 	}
 	if (source === "backlog") {
-		return readDirItems(join(cwd, ".pm", "backlog"));
+		return readItemsFromDir(join(cwd, ".pm", "backlog"));
 	}
 	if (source === "all") {
 		const [sprintItems, backlogItems] = await Promise.all([
 			readSprintItems(cwd, activeSprint),
-			readDirItems(join(cwd, ".pm", "backlog")),
+			readItemsFromDir(join(cwd, ".pm", "backlog")),
 		]);
 		return [...sprintItems, ...backlogItems];
 	}
 	throw new PmError(`unknown board source: "${source}"`, 1);
-}
-
-async function readDirItems(dir: string): Promise<BoardItem[]> {
-	let files: string[];
-	try {
-		const dirents = await readdir(dir, { withFileTypes: true, encoding: "utf8" });
-		files = dirents
-			.filter((d) => d.isFile() && d.name.endsWith(".md"))
-			.map((d) => d.name)
-			.sort((a, b) => a.localeCompare(b));
-	} catch {
-		return [];
-	}
-	const contents = await Promise.all(files.map((f) => readFile(join(dir, f), "utf8")));
-	const items: BoardItem[] = [];
-	for (const content of contents) {
-		const fm = parseFrontmatter(content);
-		const id = typeof fm.id === "string" ? fm.id : undefined;
-		if (!id) continue;
-		const rawPoints = typeof fm.points === "string" ? Number.parseInt(fm.points, 10) : undefined;
-		const points = rawPoints !== undefined && !Number.isNaN(rawPoints) ? rawPoints : undefined;
-		items.push({
-			id,
-			title: typeof fm.title === "string" ? fm.title : "",
-			type: fm.type === "task" ? "task" : "story",
-			status: typeof fm.status === "string" ? fm.status : "backlog",
-			assignee:
-				typeof fm.assignee === "string" && fm.assignee !== "" ? fm.assignee : undefined,
-			points,
-			blockedBy: Array.isArray(fm.blockedBy) ? (fm.blockedBy as string[]) : [],
-		});
-	}
-	return items;
 }
 
 function applyFilters(
@@ -112,13 +78,11 @@ function applyFilters(
 	}
 
 	if (config.filters?.statuses) {
-		const allowed = config.filters.statuses;
-		result = result.filter((item) => allowed.includes(item.status));
+		result = result.filter((item) => config.filters!.statuses!.includes(item.status));
 	}
 
 	if (config.filters?.type) {
-		const t = config.filters.type;
-		result = result.filter((item) => item.type === t);
+		result = result.filter((item) => item.type === config.filters!.type);
 	}
 
 	return result;

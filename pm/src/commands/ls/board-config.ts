@@ -59,7 +59,6 @@ export async function loadBoardConfig(cwd: string, name: string): Promise<BoardC
 	return normalizeBoardConfig(raw as Record<string, unknown>);
 }
 
-// "in-progress" → { label: "In Progress", statuses: ["in-progress"] }
 export function resolveColumn(col: ColumnDef): { label: string; statuses: string[] } {
 	if (typeof col === "string") {
 		const label = col
