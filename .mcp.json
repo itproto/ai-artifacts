@@ -3,7 +3,8 @@
     "itproto/pm": {
       "type": "stdio",
       "command": "bun",
-      "args": ["run", "pm/src/entrypoints/mcp.ts"]
+      "args": ["run", "src/entrypoints/mcp.ts"],
+      "cwd": "pm"
     }
   }
 }
