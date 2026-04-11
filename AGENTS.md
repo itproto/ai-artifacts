@@ -63,41 +63,54 @@ Story lifecycle:
 Status order:
 
 ```text
-backlog → in-progress → review → done
+backlog → ready → in-progress → review → done
 ```
 
-## Code conventions
+Terminal statuses: `done`, `closed`
 
-- TypeScript is `strict: true`; always use `.ts` extensions in imports
-- Command modules follow the two-file pattern:
+The `ready` gate requires at least one Gherkin scenario.
+
+## Coding Style & Naming Conventions
+
+- Language: TypeScript (ESM). Prefer strict typing and avoid `any`.
+- Always use `.ts` extensions in imports.
+- Do not add `@ts-nocheck` or inline lint suppressions by default; fix root causes first.
+- Prefer `zod` or existing schema helpers at external boundaries such as CLI options, persisted config, and structured file input.
+- Keep files focused; extract helpers instead of creating “v2” copies.
+- Add brief comments only for tricky or non-obvious logic.
+- Use consistent American English in code comments, docs, and user-facing text.
+- Use `pm` for the CLI command, package/binary references, and command examples.
+- Keep the board directory name as `.pm/`.
+- Keep work item IDs uppercase and zero-padded: `STORY-001`, `TASK-001`, `EPIC-001`.
+- Command modules follow:
 
 ```text
 commands/<name>/command.ts
 commands/<name>/index.ts
 ```
 
-- Register commands in `pm/src/commands/registry.ts`
-- Use `bun:test`; test files live next to the source they test
-- Use temp directories for filesystem tests and clean them up
+- Register commands in `pm/src/commands/registry.ts`.
 
 ## Testing guidance
 
-- Prefer tests for **critical functionality**
-- Keep coverage around **60%**
-- Do not add tests just to maximize coverage
-- For most features, 1–3 strong tests is enough while the CLI API is still evolving
-- See `.pm/DECISIONS.md` for rationale behind past decisions
+- Use `bun:test`; test files live next to the source they test and are named `*.test.ts`.
+- Use temp directories for filesystem tests and clean them up.
+- Prefer tests for **critical functionality**.
+- Keep coverage around **60%**.
+- Do not add tests just to maximize coverage.
+- For most features, 1–3 strong tests is enough while the CLI API is still evolving.
+- See `.pm/DECISIONS.md` for rationale behind past decisions.
 
-## Key implementation notes
+## Short implementation notes
 
-- `resolveCurrentUser` prefers the GitHub username from the git remote URL, then falls back to `git config user.name`
-- `nextId` scans `.pm/` recursively for `(STORY|TASK|EPIC)-NNN` and skips `node_modules/`
-- `frontmatter.ts` is a custom flat `key: value` parser, not full YAML
-- `pm new` prefers local templates from `.pm/templates/`, then falls back to bundled templates
+- `resolveCurrentUser` prefers the GitHub username from the git remote URL, then falls back to `git config user.name`.
+- `nextId` scans `.pm/` recursively for `(STORY|TASK|EPIC)-NNN` and skips `node_modules/`.
+- `frontmatter.ts` is a custom flat `key: value` parser, not full YAML.
+- `pm new` prefers local templates from `.pm/templates/`, then falls back to bundled templates.
 
 ## Do not do these things
 
-- Do not edit `.pm/examples/`
-- Do not add a root `package.json`
-- Do not reference the retired `jira/` system
-- Ignore stale `.github/copilot-instructions.md` and `.github/agents/pm.agent.md`
+- Do not edit `.pm/examples/`.
+- Do not add a root `package.json`.
+- Do not reference the retired `jira/` system.
+- Ignore stale `.github/copilot-instructions.md` and `.github/agents/pm.agent.md`.
