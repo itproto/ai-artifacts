@@ -86,6 +86,7 @@ commands/<name>/index.ts
 - Keep coverage around **60%**
 - Do not add tests just to maximize coverage
 - For most features, 1–3 strong tests is enough while the CLI API is still evolving
+- See `.pm/DECISIONS.md` for rationale behind past decisions
 
 ## Key implementation notes
 
