@@ -45,9 +45,9 @@ export async function readSprintItems(cwd: string, sprint: string): Promise<Boar
 		return [];
 	}
 
+	const contents = await Promise.all(files.map((f) => readFile(join(sprintDir, f), "utf8")));
 	const items: BoardItem[] = [];
-	for (const file of files) {
-		const content = await readFile(join(sprintDir, file), "utf8");
+	for (const content of contents) {
 		const fm = parseFrontmatter(content);
 
 		const id = typeof fm.id === "string" ? fm.id : undefined;
