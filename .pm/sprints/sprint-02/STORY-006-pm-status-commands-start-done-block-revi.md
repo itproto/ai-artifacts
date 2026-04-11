@@ -1,5 +1,5 @@
 ---
-id: STORY-005
+id: STORY-006
 title: pm status commands — start/done/block/review/next verbs
 type: story
 status: done
