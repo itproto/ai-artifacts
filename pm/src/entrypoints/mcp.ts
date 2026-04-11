@@ -10,9 +10,10 @@ import {
 	McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { findActiveSprint, readSprintItems } from "../services/board.ts";
+import { VERSION } from "../version.ts";
 
 const server = new Server(
-	{ name: "itproto/pm", version: "0.1.0" },
+	{ name: "itproto/pm", version: VERSION },
 	{ capabilities: { tools: {} } },
 );
 
@@ -43,10 +44,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 	}
 
 	const cwd = (request.params.arguments?.cwd as string | undefined) ?? process.cwd();
-	const pmDir = join(cwd, ".pm");
 
 	try {
-		await access(pmDir);
+		await access(join(cwd, ".pm"));
 	} catch {
 		throw new McpError(ErrorCode.InvalidRequest, `.pm/ board not found at ${cwd}`);
 	}
