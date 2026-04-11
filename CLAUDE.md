@@ -44,3 +44,13 @@ docs(STORY-002): add missing Gherkin scenario
 bun run pm/src/entrypoints/pm.ts <command>
 ```
 Or if installed globally: `pm <command>`
+
+### After merging a branch that adds dependencies
+
+Always run `bun install` in `pm/` after merging PRs that touch `pm/package.json` or `pm/bun.lock`:
+
+```
+cd pm && bun install
+```
+
+Worktrees install dependencies in isolation — merging `package.json` does not install modules in the main repo.
