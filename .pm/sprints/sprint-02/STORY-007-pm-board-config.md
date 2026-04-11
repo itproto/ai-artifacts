@@ -2,7 +2,7 @@
 id: STORY-007
 title: pm board config — YAML-configurable board views for pm ls
 type: story
-status: in-progress
+status: done
 epic: EPIC-002
 layer: cli
 assignee: itproto
