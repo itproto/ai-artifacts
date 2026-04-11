@@ -2,7 +2,7 @@
 id: STORY-005
 title: pm MCP server — expose pm_ls via
 type: story
-status: in-progress
+status: done
 epic: 
 layer: backend
 assignee: itproto
