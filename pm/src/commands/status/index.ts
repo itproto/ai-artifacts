@@ -1,17 +1,19 @@
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import * as readline from "node:readline/promises";
-import type { GlobalOpts } from "../../schemas/options.ts";
 import { GlobalOptsSchema } from "../../schemas/options.ts";
 import type { BoardItem } from "../../services/board.ts";
-import { findStoryFile } from "../../services/close.ts";
 import { parseFrontmatter } from "../../services/frontmatter.ts";
 import { PmError } from "../../services/scaffold.ts";
 import { fuzzySearch, isExactId } from "../../services/search.ts";
 
-export type StatusValue = "in-progress" | "done" | "blocked" | "review" | "next";
+// Real status values written to frontmatter
+export type StatusValue = "backlog" | "in-progress" | "blocked" | "review" | "done";
 
-const LIFECYCLE: string[] = ["backlog", "in-progress", "review", "done"];
+// CLI argument — "next" is a control word, not a status
+export type StatusArg = StatusValue | "next";
+
+const LIFECYCLE: StatusValue[] = ["backlog", "in-progress", "review", "done"];
 
 export function updateStatusInContent(content: string, status: string): string {
 	if (!/^status:\s*.*/m.test(content)) {
@@ -20,14 +22,16 @@ export function updateStatusInContent(content: string, status: string): string {
 	return content.replace(/^(status:\s*).*$/m, `$1${status}`);
 }
 
-function nextStatus(current: string): string | null {
-	const idx = LIFECYCLE.indexOf(current);
+function nextStatus(current: string): StatusValue | null {
+	const idx = LIFECYCLE.indexOf(current as StatusValue);
 	if (idx === -1 || idx === LIFECYCLE.length - 1) return null;
 	return LIFECYCLE[idx + 1];
 }
 
-async function loadOpenItems(pmDir: string): Promise<BoardItem[]> {
-	const items: BoardItem[] = [];
+type ItemWithPath = { item: BoardItem; filePath: string };
+
+async function loadOpenItems(pmDir: string): Promise<ItemWithPath[]> {
+	const results: ItemWithPath[] = [];
 
 	async function scanDir(dir: string): Promise<void> {
 		let entries: import("node:fs").Dirent[];
@@ -36,17 +40,25 @@ async function loadOpenItems(pmDir: string): Promise<BoardItem[]> {
 		} catch {
 			return;
 		}
-		for (const entry of entries) {
-			if (entry.isDirectory()) {
-				await scanDir(join(dir, entry.name));
-			} else if (entry.isFile() && entry.name.endsWith(".md")) {
-				const content = await readFile(join(dir, entry.name), "utf8");
-				const fm = parseFrontmatter(content);
-				const id = typeof fm.id === "string" ? fm.id : undefined;
-				if (!id) continue;
-				const status = typeof fm.status === "string" ? fm.status : "backlog";
-				if (status === "closed") continue;
-				items.push({
+
+		const subdirs = entries.filter((e) => e.isDirectory()).map((e) => join(dir, e.name));
+		const files = entries
+			.filter((e) => e.isFile() && e.name.endsWith(".md"))
+			.map((e) => join(dir, e.name));
+
+		await Promise.all(subdirs.map(scanDir));
+
+		const contents = await Promise.all(files.map((f) => readFile(f, "utf8")));
+		for (let i = 0; i < files.length; i++) {
+			const filePath = files[i];
+			const fm = parseFrontmatter(contents[i]);
+			const id = typeof fm.id === "string" ? fm.id : undefined;
+			if (!id) continue;
+			const status = typeof fm.status === "string" ? fm.status : "backlog";
+			if (status === "closed") continue;
+			results.push({
+				filePath,
+				item: {
 					id,
 					title: typeof fm.title === "string" ? fm.title : "",
 					type: fm.type === "task" ? "task" : "story",
@@ -55,15 +67,14 @@ async function loadOpenItems(pmDir: string): Promise<BoardItem[]> {
 						typeof fm.assignee === "string" && fm.assignee !== "" ? fm.assignee : undefined,
 					points: undefined,
 					blockedBy: [],
-				});
-			}
+				},
+			});
 		}
 	}
 
-	await scanDir(join(pmDir, "backlog"));
-	await scanDir(join(pmDir, "sprints"));
+	await Promise.all([scanDir(join(pmDir, "backlog")), scanDir(join(pmDir, "sprints"))]);
 
-	return items;
+	return results;
 }
 
 async function pickFromList(items: BoardItem[], prompt: string): Promise<BoardItem> {
@@ -91,7 +102,7 @@ async function pickFromList(items: BoardItem[], prompt: string): Promise<BoardIt
 }
 
 export async function run(
-	statusArg: StatusValue | string,
+	statusArg: StatusArg,
 	rawOpts: Record<string, unknown>,
 	args?: string[],
 ): Promise<void> {
@@ -99,13 +110,14 @@ export async function run(
 	const pmDir = join(opts.cwd, ".pm");
 	const query = args?.[0];
 
-	const items = await loadOpenItems(pmDir);
+	const loaded = await loadOpenItems(pmDir);
 
-	if (items.length === 0) {
+	if (loaded.length === 0) {
 		throw new PmError("Error: no open stories or tasks found.", 1);
 	}
 
-	// Resolve which item to update
+	const items = loaded.map((l) => l.item);
+
 	let selected: BoardItem;
 
 	if (!query) {
@@ -128,8 +140,7 @@ export async function run(
 		}
 	}
 
-	// Determine target status
-	let targetStatus: string;
+	let targetStatus: StatusValue;
 
 	if (statusArg === "next") {
 		const next = nextStatus(selected.status);
@@ -147,8 +158,8 @@ export async function run(
 		return;
 	}
 
-	// Find file and update
-	const filePath = await findStoryFile(pmDir, selected.id);
+	// Reuse path cached during scan — avoids a second directory traversal
+	const filePath = loaded.find((l) => l.item.id === selected.id)?.filePath;
 	if (!filePath) throw new PmError(`Error: file for ${selected.id} not found on disk.`, 1);
 
 	const content = await readFile(filePath, "utf8");

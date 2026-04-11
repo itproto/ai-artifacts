@@ -1,9 +1,10 @@
 import type { CommandDef } from "../../types/command.ts";
+import type { StatusArg } from "./index.ts";
 
 function makeStatusCommand(
 	name: string,
 	description: string,
-	statusArg: string,
+	statusArg: StatusArg,
 ): CommandDef {
 	return {
 		name,
