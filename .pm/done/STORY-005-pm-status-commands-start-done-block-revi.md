@@ -2,7 +2,7 @@
 id: STORY-005
 title: pm status commands — start/done/block/review/next verbs
 type: story
-status: in-progress
+status: done
 epic: 
 layer: backend
 assignee: itproto
