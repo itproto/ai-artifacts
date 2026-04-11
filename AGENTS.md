@@ -1,6 +1,4 @@
-# AGENTS.md — AI Agent Instructions
-
-This file is the **authoritative instruction file** for agents working in this repository.
+# AGENTS.md
 
 ## Project and toolchain
 
@@ -35,11 +33,17 @@ cd pm && bun install
 pm init
 pm ls
 pm ls --me
+pm ls --board <name>
 pm new "title @me #backend points:3"
 pm rm STORY-006
 pm rm "auth flow" cancelled
 pm cat STORY-004
 pm cat "pm cat"
+pm start STORY-001
+pm done STORY-001
+pm block STORY-001
+pm review STORY-001
+pm next STORY-001
 ```
 
 ## Project management rules
@@ -59,12 +63,8 @@ Story lifecycle:
 Status order:
 
 ```text
-backlog → ready → in-progress → review → done
+backlog → in-progress → review → done
 ```
-
-Terminal statuses: `done`, `closed`
-
-The `ready` gate requires at least one Gherkin scenario.
 
 ## Code conventions
 
@@ -86,7 +86,6 @@ commands/<name>/index.ts
 - Keep coverage around **60%**
 - Do not add tests just to maximize coverage
 - For most features, 1–3 strong tests is enough while the CLI API is still evolving
-- See `.pm/DECISIONS.md` for the rationale behind test strategy decisions
 
 ## Key implementation notes
 
