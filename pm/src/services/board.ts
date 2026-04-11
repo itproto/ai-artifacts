@@ -73,7 +73,7 @@ export async function readSprintItems(cwd: string, sprint: string): Promise<Boar
 
 const STATUS_ORDER = ["in-progress", "blocked", "review", "done", "backlog"];
 
-const STATUS_ICONS: Record<string, string> = {
+export const STATUS_ICONS: Record<string, string> = {
 	"in-progress": "●",
 	blocked: "○",
 	review: "◐",

@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "yaml";
+import { PmError } from "../../services/scaffold.ts";
 
 export type ColumnDef = string | { label: string; statuses: string[] };
 
@@ -19,7 +20,7 @@ const DEFAULT_FIELDS = ["id", "title", "assignee", "points"];
 
 export function normalizeBoardConfig(raw: Record<string, unknown>): BoardConfig {
 	if (!Array.isArray(raw.columns) || raw.columns.length === 0) {
-		throw new Error("board config: 'columns' is required and must be non-empty");
+		throw new PmError("board config: 'columns' is required and must be non-empty", 1);
 	}
 	return {
 		source: typeof raw.source === "string" ? raw.source : "active-sprint",
@@ -39,20 +40,21 @@ export async function loadBoardConfig(cwd: string, name: string): Promise<BoardC
 		content = await readFile(filePath, "utf8");
 	} catch {
 		if (name === "default") {
-			throw new Error(
+			throw new PmError(
 				"Error: no default board found. Create .pm/boards/default.yaml to get started.",
+				1,
 			);
 		}
-		throw new Error(`board "${name}" not found at .pm/boards/${name}.yaml`);
+		throw new PmError(`board "${name}" not found at .pm/boards/${name}.yaml`, 1);
 	}
 	let raw: unknown;
 	try {
 		raw = parse(content);
 	} catch (e) {
-		throw new Error(`invalid YAML in .pm/boards/${name}.yaml: ${(e as Error).message}`);
+		throw new PmError(`invalid YAML in .pm/boards/${name}.yaml: ${(e as Error).message}`, 1);
 	}
 	if (typeof raw !== "object" || raw === null) {
-		throw new Error(`invalid board config in .pm/boards/${name}.yaml`);
+		throw new PmError(`invalid board config in .pm/boards/${name}.yaml`, 1);
 	}
 	return normalizeBoardConfig(raw as Record<string, unknown>);
 }
