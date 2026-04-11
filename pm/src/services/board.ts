@@ -32,11 +32,10 @@ export async function findActiveSprint(cwd: string): Promise<string | null> {
 	}
 }
 
-export async function readSprintItems(cwd: string, sprint: string): Promise<BoardItem[]> {
-	const sprintDir = join(cwd, ".pm", "sprints", sprint);
+export async function readItemsFromDir(dir: string): Promise<BoardItem[]> {
 	let files: string[];
 	try {
-		const dirents = await readdir(sprintDir, { withFileTypes: true, encoding: "utf8" });
+		const dirents = await readdir(dir, { withFileTypes: true, encoding: "utf8" });
 		files = dirents
 			.filter((d) => d.isFile() && d.name.endsWith(".md"))
 			.map((d) => d.name)
@@ -45,7 +44,7 @@ export async function readSprintItems(cwd: string, sprint: string): Promise<Boar
 		return [];
 	}
 
-	const contents = await Promise.all(files.map((f) => readFile(join(sprintDir, f), "utf8")));
+	const contents = await Promise.all(files.map((f) => readFile(join(dir, f), "utf8")));
 	const items: BoardItem[] = [];
 	for (const content of contents) {
 		const fm = parseFrontmatter(content);
@@ -71,9 +70,13 @@ export async function readSprintItems(cwd: string, sprint: string): Promise<Boar
 	return items;
 }
 
+export async function readSprintItems(cwd: string, sprint: string): Promise<BoardItem[]> {
+	return readItemsFromDir(join(cwd, ".pm", "sprints", sprint));
+}
+
 const STATUS_ORDER = ["in-progress", "blocked", "review", "done", "backlog"];
 
-const STATUS_ICONS: Record<string, string> = {
+export const STATUS_ICONS: Record<string, string> = {
 	"in-progress": "●",
 	blocked: "○",
 	review: "◐",
