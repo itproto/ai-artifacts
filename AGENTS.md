@@ -1,206 +1,117 @@
-# AGENTS.md — AI Agent Instructions
+# AGENTS.md
 
-This file provides authoritative guidance for AI agents (GitHub Copilot, Codex, OpenAI Codex CLI, etc.) working in this repository.
+## Project and toolchain
 
----
+- The project board lives in **`.pm/`** and is the source of truth for work items.
+- The only runnable package is **`pm/`**. There is no root `package.json`.
+- Use **Bun only**. Do not use `npm`, `yarn`, `pnpm`, or `vitest`.
 
-## Repository Layout
+## Developer commands
 
-```
-ai-artifacts/
-├── .pm/                    ← File-based project board (source of truth for work items)
-│   ├── EPICS.md            ← Epic definitions
-│   ├── DECISIONS.md        ← Append-only architecture decision log
-│   ├── templates/          ← story.md / task.md templates
-│   ├── examples/           ← READ ONLY — reference templates, never edit
-│   ├── backlog/            ← Stories not yet in a sprint
-│   ├── sprints/sprint-NN/  ← Active and past sprints (highest NN = active)
-│   ├── done/               ← Completed stories (moved here, not deleted)
-│   └── closed/             ← Cancelled / won't-do stories
-└── pm/                     ← The @itproto/pm CLI package (the only npm/bun package)
-    ├── package.json
-    ├── biome.json
-    ├── tsconfig.json
-    ├── bunfig.toml
-    ├── bun.lock
-    └── src/
-        ├── entrypoints/pm.ts      ← CLI entry point
-        ├── commands/              ← One sub-folder per command (command.ts + index.ts)
-        ├── services/              ← Business logic (board, frontmatter, id, search, …)
-        ├── cli/                   ← Output formatting
-        ├── schemas/               ← Zod option schemas
-        └── types/                 ← Shared TypeScript types
-```
-
-There is no root `package.json`. The only runnable package is `pm/`.
-
----
-
-## Runtime & Toolchain
-
-| Tool | Version / Notes |
-|---|---|
-| **Bun** | ≥ 1.1.0 — **required**. Do not use Node/npm/yarn/pnpm. |
-| **TypeScript** | `noEmit: true` — type-check only, Bun runs `.ts` directly |
-| **Biome** | Lint + format (replaces ESLint + Prettier) |
-
----
-
-## Developer Commands
-
-All commands run from `pm/` unless stated otherwise.
+Run commands from `pm/` unless noted otherwise.
 
 ```bash
-# Tests
-bun test                  # run full test suite (~85 tests, ~200ms)
+bun test
+bun run lint
+bun run check
+bun run typecheck
+bun run dev <cmd>
 
-# Lint / format
-bun run lint              # biome check src/
-
-# Type-check + lint
-bun run check             # biome check src/ && tsc --noEmit
-
-# Type-check only
-bun run typecheck         # tsc --noEmit
-
-# Run CLI in dev mode (from pm/)
-bun run dev <cmd>         # bun src/entrypoints/pm.ts <cmd>
-
-# Run CLI from repo root
+# from repo root
 bun run pm/src/entrypoints/pm.ts <command>
 ```
 
----
+If you merge changes to `pm/package.json` or `pm/bun.lock`, run:
 
-## Code Conventions
-
-### Style (enforced by Biome)
-- Indentation: **tabs**, width 2
-- Line width: 100
-- Unused imports / variables: **warn** (do not introduce new ones)
-
-### TypeScript
-- `strict: true`, `moduleResolution: bundler`, target `ESNext`
-- Always use `.ts` extensions in imports (e.g. `import { x } from './foo.ts'`)
-- No barrel `index.ts` re-exports for commands — each command lazy-loads via `load: () => import('./index.ts')`
-
-### Test files
-- Use `bun:test` — **not** `vitest`. Import from `'bun:test'`:
-  ```ts
-  import { describe, expect, it, afterEach } from 'bun:test'
-  ```
-- Test files live alongside the source file they test (e.g. `board.test.ts` next to `board.ts`)
-- Use `mkdtemp` / `tmp` directories for filesystem tests; clean up in `afterEach`
-- **PoC test strategy**: write 1–3 tests per feature — happy path + one important error/edge case. Do not expand test coverage beyond this until the CLI API is stable. See `.pm/DECISIONS.md` for rationale.
-
-### Command module pattern
-Every command must follow the two-file pattern:
-
-```
-commands/<name>/command.ts   ← CommandDef with lazy load
-commands/<name>/index.ts     ← exports async run(opts, args)
-```
-
-`command.ts` example:
-```ts
-import type { CommandDef } from '../../types/command.ts'
-export const def: CommandDef = {
-  name: 'foo',
-  description: 'Does foo',
-  load: () => import('./index.ts'),
-}
-```
-
-Register new commands in `commands/registry.ts`.
-
----
-
-## Project Management
-
-This project uses the `pm` CLI with a file-based board in `.pm/`.
-
-### Before starting any work session
-1. Run `pm ls` — see the current sprint state
-2. Locate the relevant story in `.pm/sprints/<sprint>/` or `.pm/backlog/`
-3. Read the story's `## Acceptance Criteria` — the Gherkin scenarios are the **source of truth** for behaviour
-
-### Story lifecycle rules
-- **Do not implement a story that has no Gherkin scenarios**
-- Move story file to `.pm/done/` when implementation is complete
-- Use `pm rm <id> <reason>` to cancel a story (moves to `.pm/closed/`)
-- Sprint membership is determined by directory location, not frontmatter
-- Active sprint = highest-numbered `sprints/sprint-NN/` directory
-
-### Status values (in order)
-`backlog` → `ready` → `in-progress` → `review` → `done`  
-Terminal: `done`, `closed`
-
-A story must have at least one Gherkin scenario before it can move to `ready`.
-
-### pm CLI quick reference
 ```bash
-pm init                        # scaffold .pm/ board in current project
-pm ls                          # show sprint board
-pm ls --me                     # show only your items (resolved from git config user.name)
+cd pm && bun install
+```
+
+## Command reference
+
+```bash
+pm init
+pm ls
+pm ls --me
+pm ls --board <name>
 pm new "title @me #backend points:3"
-pm new "title @me #backend" -o # create and open in $EDITOR immediately
-pm rm STORY-006                # close by ID (prompts for reason)
-pm rm "auth flow" cancelled    # fuzzy search + reason
-pm cat STORY-004               # print story to stdout
-pm cat "pm cat"                # fuzzy search, auto-pick if 1 match
-pm cat STORY-004 -o            # open in $EDITOR
+pm edit STORY-004 status:review
+pm rm STORY-006
+pm rm "auth flow" cancelled
+pm cat STORY-004
+pm cat "pm cat"
+pm start STORY-001
+pm done STORY-001
+pm block STORY-001
+pm review STORY-001
+pm next STORY-001
 ```
 
-### Global flags (all subcommands)
-- `--json` — output as JSON
-- `--dry-run` — preview changes without writing
-- `--cwd <path>` — override working directory (useful when running from a subdirectory)
+## Project management rules
 
-### pm new DSL tokens
-- `@username` — assignee (`@me` resolves to current git user)
-- `#layer` — `frontend` / `backend` / `fullstack`
-- `#type` — `story` (default) / `task`
-- `#EPIC-NNN` — link to epic
-- `key:value` — arbitrary frontmatter field
-- Remaining words → title
+Before starting work:
+1. Run `pm ls`
+2. Find the relevant story in `.pm/sprints/<sprint>/` or `.pm/backlog/`
+3. Read `## Acceptance Criteria` — Gherkin is the source of truth for behavior
 
----
+Story lifecycle:
+- Do not implement a story with no Gherkin scenarios
+- Move completed stories to `.pm/done/`
+- Use `pm rm <id> <reason>` to cancel work; it moves the item to `.pm/closed/`
+- Sprint membership is based on directory location, not frontmatter
+- Active sprint = highest-numbered `sprints/sprint-NN/`
 
-## Commit Format (Conventional Commits)
+Status order:
 
-```
-feat(STORY-001): add TodoList component
-fix(STORY-003): correct empty state message
-chore(TASK-001): scaffold Vite + Tailwind
-docs(STORY-002): add missing Gherkin scenario
+```text
+backlog → ready → in-progress → review → done
 ```
 
-Scope must be the story/task ID.
+Terminal statuses: `done`, `closed`
 
----
+The `ready` gate requires at least one Gherkin scenario.
 
-## Key Implementation Notes
+## Coding Style & Naming Conventions
 
-### `resolveCurrentUser` (board.ts)
-Prefers the GitHub username parsed from the git remote URL (`github.com/<owner>/`), falls back to `git config user.name`.
+- Language: TypeScript (ESM). Prefer strict typing and avoid `any`.
+- Always use `.ts` extensions in imports.
+- Do not add `@ts-nocheck` or inline lint suppressions by default; fix root causes first.
+- Prefer `zod` or existing schema helpers at external boundaries such as CLI options, persisted config, and structured file input.
+- Keep files focused; extract helpers instead of creating “v2” copies.
+- Add brief comments only for tricky or non-obvious logic.
+- Use consistent American English in code comments, docs, and user-facing text.
+- Use `pm` for the CLI command, package/binary references, and command examples.
+- Keep the board directory name as `.pm/`.
+- Keep work item IDs uppercase and zero-padded: `STORY-001`, `TASK-001`, `EPIC-001`.
+- Command modules follow:
 
-### ID generation (`nextId` in id.ts)
-Scans all directories under `.pm/` recursively, matches filenames against `(STORY|TASK|EPIC)-(\d+)`, skips `node_modules/`. IDs are zero-padded to 3 digits.
+```text
+commands/<name>/command.ts
+commands/<name>/index.ts
+```
 
-### Frontmatter parser (frontmatter.ts)
-Custom YAML-ish parser — no external YAML dependency. Only supports the flat key: value format used in `.pm` templates.
+- Register commands in `pm/src/commands/registry.ts`.
 
-### Template resolution (`pm new`)
-1. Looks for `.pm/templates/<type>.md` in the current project first
-2. Falls back to bundled `pm/template/templates/<type>.md`
+## Testing guidance
 
----
+- Use `bun:test`; test files live next to the source they test and are named `*.test.ts`.
+- Use temp directories for filesystem tests and clean them up.
+- Prefer tests for **critical functionality**.
+- Keep coverage around **60%**.
+- Do not add tests just to maximize coverage.
+- For most features, 1–3 strong tests is enough while the CLI API is still evolving.
+- See `.pm/DECISIONS.md` for rationale behind past decisions.
 
-## What NOT to do
+## Short implementation notes
 
-- Do not edit files in `.pm/examples/` — they are reference only
-- Do not use `npm`, `yarn`, or `pnpm` — use `bun` exclusively
-- Do not import from `vitest` — use `bun:test`
-- Do not add a root `package.json` — the only package is `pm/`
-- Do not reference `jira/` — that directory was retired; the board is now in `.pm/`
-- Ignore `.github/copilot-instructions.md` and `.github/agents/pm.agent.md` — both still reference the retired `jira/` system and are stale
+- `resolveCurrentUser` prefers the GitHub username from the git remote URL, then falls back to `git config user.name`.
+- `nextId` scans `.pm/` recursively for `(STORY|TASK|EPIC)-NNN` and skips `node_modules/`.
+- `frontmatter.ts` is a custom flat `key: value` parser, not full YAML.
+- `pm new` prefers local templates from `.pm/templates/`, then falls back to bundled templates.
+
+## Do not do these things
+
+- Do not edit `.pm/examples/`.
+- Do not add a root `package.json`.
+- Do not reference the retired `jira/` system.
+- Ignore stale `.github/copilot-instructions.md` and `.github/agents/pm.agent.md`.
