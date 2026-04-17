@@ -2,7 +2,7 @@
 id: STORY-008
 title: pm edit command for updating work-item frontmatter
 type: story
-status: review
+status: done
 epic: EPIC-002
 layer: backend
 assignee: itproto
