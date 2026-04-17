@@ -1,5 +1,10 @@
 # AGENTS.md
 
+## Project Scope
+
+This is a **CLI-only project**. All work targets the `pm/` package and `.pm/` board directory.
+Do not assume or add frontend, backend web, or API server work unless explicitly asked.
+
 ## Project and toolchain
 
 - The project board lives in **`.pm/`** and is the source of truth for work items.
